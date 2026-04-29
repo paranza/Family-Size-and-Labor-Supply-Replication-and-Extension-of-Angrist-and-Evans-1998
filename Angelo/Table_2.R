@@ -6,45 +6,59 @@ library(tidyr)
 library(gt)
 
 # ==========================================
-# PART 1: 1980 CENSUS DATA
+# PART 1: UNIQUE FUNCTION TO PREPARE DATA
 # ==========================================
 
-# 1. PROCESSING OF ALL VARIABLES (1980)
-table2_data_80 <- clean_data_80 %>%
-  mutate(
-    # Convert the variables of the father and the 3rd child to numeric
-    across(c(WEEKSM, HOURSM, INCOME1M, INCOME2M, FAMINC, TIMESMAR, AGEMAR, MARITAL, 
-             AGED, WEEKSD, HOURSD, INCOME1D, INCOME2D, AGEQ3RD), as.numeric),
-    
-    # Sex and Twins Variables
-    two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
-    two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
-    twins_2 = ifelse(!is.na(AGEQ2ND) & !is.na(AGEQ3RD) & AGEQ2ND == AGEQ3RD, 1, 0),
-    
-    # Mothers Variables
-    age_first_birth = AGEM - AGEK,
-    worked_for_pay = ifelse(WEEKSM > 0, 1, 0),
-    labor_income_95 = (INCOME1M + INCOME2M) * 2.27,
-    
-    # Fathers Variables
-    age_first_birth_dad = AGED - AGEK,
-    worked_for_pay_dad = ifelse(WEEKSD > 0, 1, 0),
-    labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27,
-    
-    # Family Incomes
-    family_income_95 = FAMINC * 2.27,
-    non_wife_income_95 = (FAMINC - INCOME1M - INCOME2M) * 2.27
-  )
+prepare_table2_vars <- function(df, year) {
+  if (year == 1980) {
+    df %>% mutate(
+      across(any_of(c("WEEKSM", "HOURSM", "INCOME1M", "INCOME2M", "FAMINC", 
+                      "WEEKSD", "HOURSD", "INCOME1D", "INCOME2D", "AGEQ3RD", "AGED")), as.numeric),
+      age_first_birth = as.numeric(AGEM) - as.numeric(AGEK),
+      age_first_birth_dad = as.numeric(AGED) - as.numeric(AGEK),
+      two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
+      two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
+      twins_2 = ifelse(!is.na(AGEQ2ND) & !is.na(AGEQ3RD) & AGEQ2ND == AGEQ3RD, 1, 0),
+      worked_for_pay = ifelse(WEEKSM > 0, 1, 0),
+      labor_income_95 = (INCOME1M + INCOME2M) * 2.27,
+      worked_for_pay_dad = ifelse(WEEKSD > 0, 1, 0),
+      labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27,
+      family_income_95 = FAMINC * 2.27,
+      non_wife_income_95 = (FAMINC - INCOME1M - INCOME2M) * 2.27
+    )
+  } else {
+    df %>% mutate(
+      across(any_of(c("WEEK89M", "HOUR89M", "INCOMEM1", "INCOMEM2", "FAMINC", "MARITAL", 
+                      "AGED", "WEEK89D", "HOUR89D", "INCOMED1", "INCOMED2", "MULTI2ND")), as.numeric),
+      age_first_birth = as.numeric(AGEM) - as.numeric(AGEK),
+      age_first_birth_dad = as.numeric(AGED) - as.numeric(AGEK),
+      two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
+      two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
+      twins_2 = ifelse(MULTI2ND == 1, 1, 0),
+      worked_for_pay = ifelse(WEEK89M > 0, 1, 0),
+      labor_income_95 = (INCOMEM1 + INCOMEM2) * 1.22,
+      worked_for_pay_dad = ifelse(WEEK89D > 0, 1, 0),
+      labor_income_dad_95 = (INCOMED1 + INCOMED2) * 1.22,
+      family_income_95 = FAMINC * 1.22,
+      non_wife_income_95 = (FAMINC - INCOMEM1 - INCOMEM2) * 1.22
+    )
+  }
+}
 
-# 2. SAMPLE OF MARRIED WOMEN AND THEIR HUSBANDS (1980)
-married_data_80 <- table2_data_80 %>%
-  filter(
-    MARITAL <= 2,
-    TIMESMAR == 1,
-    AGEMAR <= age_first_birth
-  )
+# ==========================================
+# APPLY FUNCTION TO THE DATASETS
+# ==========================================
 
-# 3. FUNCTIONS FOR EXACT FORMATTING (1980)
+table2_all_80  <- prepare_table2_vars(clean_data_80, 1980)
+table2_marr_80 <- prepare_table2_vars(married_data_80, 1980)
+
+table2_all_90  <- prepare_table2_vars(clean_data_90, 1990)
+table2_marr_90 <- prepare_table2_vars(married_data_90, 1990)
+
+
+# ==========================================
+# SUMMARIZE FUNCTIONS (1980)
+# ==========================================
 summarize_women_80 <- function(df, is_all_women = FALSE) {
   df %>%
     summarise(
@@ -91,54 +105,9 @@ summarize_husbands_80 <- function(df) {
     pivot_longer(cols = everything(), names_to = "Variable", values_to = "Mean (SD)")
 }
 
-# 4. MERGE COLUMNS (1980)
-col_all_women_80 <- summarize_women_80(table2_data_80, is_all_women = TRUE) %>% 
-  rename(`All Women_1980` = `Mean (SD)`)
-
-col_married_wives_80 <- summarize_women_80(married_data_80, is_all_women = FALSE) %>% 
-  rename(`Married Wives_1980` = `Mean (SD)`)
-
-col_husbands_80 <- summarize_husbands_80(married_data_80) %>% 
-  rename(`Husbands_1980` = `Mean (SD)`)
-
-final_table_80 <- col_all_women_80 %>%
-  left_join(col_married_wives_80, by = "Variable") %>%
-  left_join(col_husbands_80, by = "Variable")
-
-
 # ==========================================
-# PART 2: 1990 CENSUS DATA
+# SUMMARIZE FUNCTIONS (1990)
 # ==========================================
-
-# 1. PROCESSING OF ALL VARIABLES (1990)
-table2_data_90 <- clean_data_90 %>%
-  mutate(
-    across(c(WEEK89M, HOUR89M, INCOMEM1, INCOMEM2, FAMINC, MARITAL, 
-             AGED, WEEK89D, HOUR89D, INCOMED1, INCOMED2, MULTI2ND), as.numeric),
-    
-    two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
-    two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
-    twins_2 = ifelse(MULTI2ND == 1, 1, 0),
-    
-    age_first_birth = AGEM - AGEK,
-    worked_for_pay = ifelse(WEEK89M > 0, 1, 0),
-    labor_income_95 = (INCOMEM1 + INCOMEM2) * 1.22,
-    
-    age_first_birth_dad = AGED - AGEK,
-    worked_for_pay_dad = ifelse(WEEK89D > 0, 1, 0),
-    labor_income_dad_95 = (INCOMED1 + INCOMED2) * 1.22,
-    
-    family_income_95 = FAMINC * 1.22,
-    non_wife_income_95 = (FAMINC - INCOMEM1 - INCOMEM2) * 1.22
-  )
-
-# 2. SAMPLE OF MARRIED WOMEN AND THEIR HUSBANDS (1990)
-married_data_90 <- table2_data_90 %>%
-  filter(
-    MARITAL <= 2
-  )
-
-# 3. FUNCTIONS FOR EXACT FORMATTING (1990)
 summarize_women_90 <- function(df, is_all_women = FALSE) {
   df %>%
     summarise(
@@ -185,23 +154,42 @@ summarize_husbands_90 <- function(df) {
     pivot_longer(cols = everything(), names_to = "Variable", values_to = "Mean (SD)")
 }
 
-# 4. MERGE COLUMNS (1990)
-col_all_women_90 <- summarize_women_90(table2_data_90, is_all_women = TRUE) %>% 
+
+
+# ==========================================
+# COLUMN CREATION (1980)
+# ==========================================
+col_all_women_80 <- summarize_women_80(table2_all_80, is_all_women = TRUE) %>% 
+  rename(`All Women_1980` = `Mean (SD)`)
+
+col_married_wives_80 <- summarize_women_80(table2_marr_80, is_all_women = FALSE) %>% 
+  rename(`Married Wives_1980` = `Mean (SD)`)
+
+col_husbands_80 <- summarize_husbands_80(table2_marr_80) %>% 
+  rename(`Husbands_1980` = `Mean (SD)`)
+
+final_table_80 <- col_all_women_80 %>%
+  left_join(col_married_wives_80, by = "Variable") %>%
+  left_join(col_husbands_80, by = "Variable")
+
+# ==========================================
+# COLUMN CREATION (1990)
+# ==========================================
+col_all_women_90 <- summarize_women_90(table2_all_90, is_all_women = TRUE) %>% 
   rename(`All Women_1990` = `Mean (SD)`)
 
-col_married_wives_90 <- summarize_women_90(married_data_90, is_all_women = FALSE) %>% 
+col_married_wives_90 <- summarize_women_90(table2_marr_90, is_all_women = FALSE) %>% 
   rename(`Married Wives_1990` = `Mean (SD)`)
 
-col_husbands_90 <- summarize_husbands_90(married_data_90) %>% 
+col_husbands_90 <- summarize_husbands_90(table2_marr_90) %>% 
   rename(`Husbands_1990` = `Mean (SD)`)
 
 final_table_90 <- col_all_women_90 %>%
   left_join(col_married_wives_90, by = "Variable") %>%
   left_join(col_husbands_90, by = "Variable")
 
-
 # ==========================================
-# PART 3: FINAL MERGE AND EXPORT (TABLE 2)
+# PART 2: FINAL MERGE AND EXPORT (TABLE 2)
 # ==========================================
 
 # Merge the clean 1980 and 1990 tables
@@ -209,7 +197,7 @@ merged_table_2 <- final_table_80 %>%
   left_join(final_table_90, by = "Variable")
 
 # Create the final, publication-ready Table 2 using gt
-publication_table <- merged_table_2 %>%
+publication_table_2 <- merged_table_2 %>%
   gt() %>%
   tab_header(
     title = md("**Table 2: Demographic and Labor Supply Characteristics**"),
@@ -236,17 +224,15 @@ publication_table <- merged_table_2 %>%
   opt_row_striping()
 
 # Display the final table
-publication_table
+publication_table_2
 
-# To save as pdf
-# gtsave(publication_table, "Table_2.png")
+# To save as png
+gtsave(publication_table_2, "Table_2.png")
 
 # ==========================================
-# PART 4: ENVIRONMENT CLEANUP
+# PART 3: ENVIRONMENT CLEANUP
 # ==========================================
 # Keep the environment clean by removing intermediate datasets and functions
-rm(table2_data_80, married_data_80, col_all_women_80, col_married_wives_80, col_husbands_80, final_table_80,
-   table2_data_90, married_data_90, col_all_women_90, col_married_wives_90, col_husbands_90, final_table_90,
-   merged_table_2, summarize_women_80, summarize_husbands_80, summarize_women_90, summarize_husbands_90)
+rm(list = setdiff(ls(), c('clean_data_80', 'clean_data_90', 'married_data_80', 'married_data_90')))
 
 
