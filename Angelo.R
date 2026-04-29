@@ -342,4 +342,5 @@ publication_table <- merged_table_2 %>%
 # Display the final table
 publication_table
 
-gtsave(publication_table, "Table_2.png")
+# To save as pdf
+# gtsave(publication_table, "Table_2.png")
