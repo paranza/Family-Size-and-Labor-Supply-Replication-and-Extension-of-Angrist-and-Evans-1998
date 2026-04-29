@@ -13,7 +13,7 @@ data_90 = read_sas("dati/m_d_903.sas7bdat") # 1990
 clean_data_80 <- data_80 %>%
   
   # 1. Convert math/count variables to numeric to avoid character comparison errors
-  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, TWIN1ST), as.numeric)) %>%
+  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, TWIN1ST, RACEM, SPANISHM), as.numeric)) %>%
   
   # 2. Decode the FERT variable (in Census/IPUMS data, FERT code is offset by 1)
   mutate(real_kids = FERT - 1) %>%
@@ -57,7 +57,17 @@ clean_data_80 <- data_80 %>%
     boy2nd = ifelse(SEX2ND == "0", 1, 0),
     
     # Instrumental variable (z): 1 if the first two children are the same sex
-    same_sex = ifelse(boy1st == boy2nd, 1, 0)
+    same_sex = ifelse(boy1st == boy2nd, 1, 0),
+    
+    # Sex mix instruments
+    two_boys  = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
+    two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
+    mom_age_at_birth = AGEM - AGEK,
+    
+    # Demographic dummies
+    black      = ifelse(RACEM == 2, 1, 0),
+    hispanic   = ifelse(SPANISHM > 0, 1, 0),
+    other_race = ifelse(RACEM > 2, 1, 0)
   )
 
 ##### CREATE married_data_80
@@ -96,7 +106,7 @@ married_data_80 <- clean_data_80 %>%
 clean_data_90 <- data_90 %>%
   
   # 1. Convert math/count variables to numeric
-  mutate(across(c(AGEM, FERTIL, KIDCOUNT, AGEK, AGE2NDK, TWIN1ST), as.numeric)) %>%
+  mutate(across(c(AGEM, FERTIL, KIDCOUNT, AGEK, AGE2NDK, TWIN1ST, HISPM, RACEM), as.numeric)) %>%
   
   # 2. Decode the FERTIL variable (Assuming standard IPUMS +1 offset)
   mutate(real_kids = FERTIL - 1) %>%
@@ -133,7 +143,17 @@ clean_data_90 <- data_90 %>%
     boy2nd = ifelse(SEX2NDK == "0", 1, 0),
     
     # Instrumental variable (z): 1 if the first two children are the same sex
-    same_sex = ifelse(boy1st == boy2nd, 1, 0)
+    same_sex = ifelse(boy1st == boy2nd, 1, 0),
+    
+    # Sex mix instruments
+    two_boys  = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
+    two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
+    mom_age_at_birth = AGEM - AGEK,
+    
+    # Demographic dummies
+    black      = ifelse(RACEM == 2, 1, 0),
+    hispanic   = ifelse(HISPM > 0, 1, 0),
+    other_race = ifelse(RACEM > 2, 1, 0)
   )
 
 ##### CREATE married_data_90
@@ -143,3 +163,4 @@ married_data_90 <- clean_data_90 %>%
     MARITAL == "0",    # Spouse present
     !is.na(AGED)       # Dad must be physically present
   )
+

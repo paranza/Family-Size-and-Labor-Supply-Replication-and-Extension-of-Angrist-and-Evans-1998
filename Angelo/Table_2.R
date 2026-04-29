@@ -227,7 +227,7 @@ publication_table_2 <- merged_table_2 %>%
 publication_table_2
 
 # To save as png
-gtsave(publication_table_2, "Table_2.png")
+# gtsave(publication_table_2, "Table_2.png")
 
 # ==========================================
 # PART 3: ENVIRONMENT CLEANUP
