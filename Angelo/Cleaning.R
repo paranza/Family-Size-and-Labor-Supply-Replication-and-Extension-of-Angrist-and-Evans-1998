@@ -67,7 +67,7 @@ married_data_80 <- clean_data_80 %>%
     MARITAL == "0",    # Spouse present
     TIMESMAR == "1",   # Mom married only once
     TIMEMARD == "1",   # Dad married only once
-    AGED != "",        # Dad must be physically present in household[cite: 1]
+    AGED != "",        # Dad must be physically present in household
     AGEMAR != "",      # Marriage age data must exist
     AGEMARD != ""      # Dad marriage age data must exist
   ) %>%
@@ -84,7 +84,7 @@ married_data_80 <- clean_data_80 %>%
     dad_age_at_birth = AGED - AGEK
   ) %>%
   filter(
-    # Both parents married before or at the time of first birth[cite: 1]
+    # Both parents married before or at the time of first birth
     AGEMAR <= mom_age_at_birth,
     AGEMARD <= dad_age_at_birth
   )
@@ -140,6 +140,6 @@ clean_data_90 <- data_90 %>%
 
 married_data_90 <- clean_data_90 %>%
   filter(
-    MARITAL == "0",    # Spouse present[cite: 1]
-    !is.na(AGED)       # Dad must be physically present[cite: 1]
+    MARITAL == "0",    # Spouse present
+    !is.na(AGED)       # Dad must be physically present
   )
