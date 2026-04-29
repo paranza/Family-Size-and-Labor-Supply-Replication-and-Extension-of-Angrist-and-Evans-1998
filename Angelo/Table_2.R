@@ -1,112 +1,9 @@
-# ANGELO 
+###### TABLE 2
+
 library(dplyr)
 library(haven)
 library(tidyr)
 library(gt)
-
-data_80 = read_sas("dati/m_d_806.sas7bdat") # 1980
-data_90 = read_sas("dati/m_d_903.sas7bdat") # 1990
-
-
-##### CLEAN data_80
-
-clean_data_80 <- data_80 %>%
-  
-  # 1. Convert math/count variables to numeric to avoid character comparison errors
-  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, TWIN1ST), as.numeric)) %>%
-  
-  # 2. Decode the FERT variable (in Census/IPUMS data, FERT code is offset by 1)
-  mutate(real_kids = FERT - 1) %>%
-  
-  # 3. Apply the Angrist & Evans sample selection filters
-  filter(
-    # Maternal age must be between 21 and 35
-    AGEM >= 21 & AGEM <= 35,
-    
-    # Mother must have at least 2 children
-    real_kids >= 2,
-    
-    # Children currently living in the household must match children ever born
-    real_kids == KIDCOUNT,
-    
-    # Oldest child must be strictly younger than 18
-    !is.na(AGEK) & AGEK < 18,
-    
-    # Second child must be at least 1 year old (4 quarters)
-    !is.na(AGEQ2ND) & AGEQ2ND >= 4,
-    
-    # Exclude multiple births (twins/triplets) at first pregnancy
-    TWIN1ST == 0,
-    
-    # Exclude census-allocated (imputed) data for age, sex, and quarter of birth
-    AAGE == "0", 
-    ASEX == "0",
-    AAGE2ND == "0", 
-    ASEX2ND == "0",
-    AQTRBRTH == "0", 
-    AQTR2ND == "0"
-  ) %>%
-  
-  # 4. Create the final variables needed for the IV / 2SLS regressions
-  mutate(
-    # Endogenous variable (x): 1 if more than 2 children, 0 otherwise
-    more_than_2 = ifelse(real_kids > 2, 1, 0),
-    
-    # Sex dummies: 1 = Boy, 0 = Girl (Assuming "0" is the raw string code for male)
-    boy1st = ifelse(SEXK == "0", 1, 0),
-    boy2nd = ifelse(SEX2ND == "0", 1, 0),
-    
-    # Instrumental variable (z): 1 if the first two children are the same sex
-    same_sex = ifelse(boy1st == boy2nd, 1, 0)
-  )
-
-##### CLEAN data_90
-
-# Using data_90 with the exact column names from your screenshot
-clean_data_90 <- data_90 %>%
-  
-  # 1. Convert math/count variables to numeric
-  mutate(across(c(AGEM, FERTIL, KIDCOUNT, AGEK, AGE2NDK, TWIN1ST), as.numeric)) %>%
-  
-  # 2. Decode the FERTIL variable (Assuming standard IPUMS +1 offset)
-  mutate(real_kids = FERTIL - 1) %>%
-  
-  # 3. Apply the Angrist & Evans sample selection filters (1990 rules)
-  filter(
-    # Maternal age must be between 21 and 35
-    AGEM >= 21 & AGEM <= 35,
-    
-    # Mother must have at least 2 children
-    real_kids >= 2,
-    
-    # Children currently living in the household must match children ever born
-    real_kids == KIDCOUNT,
-    
-    # Oldest child must be strictly younger than 18
-    !is.na(AGEK) & AGEK < 18,
-    
-    # Second child must be at least 1 year old
-    !is.na(AGE2NDK) & AGE2NDK >= 1,
-    
-    # Exclude multiple births (twins/triplets) at first pregnancy
-    TWIN1ST == 0
-    
-  ) %>%
-  
-  # 4. Create the final variables needed for the IV / 2SLS regressions
-  mutate(
-    # Endogenous variable (x): 1 if more than 2 children, 0 otherwise
-    more_than_2 = ifelse(real_kids > 2, 1, 0),
-    
-    # Sex dummies: 1 = Boy, 0 = Girl
-    boy1st = ifelse(SEXK == "0", 1, 0),
-    boy2nd = ifelse(SEX2NDK == "0", 1, 0),
-    
-    # Instrumental variable (z): 1 if the first two children are the same sex
-    same_sex = ifelse(boy1st == boy2nd, 1, 0)
-  )
-
-######
 
 # ==========================================
 # PART 1: 1980 CENSUS DATA
@@ -116,8 +13,8 @@ clean_data_90 <- data_90 %>%
 table2_data_80 <- clean_data_80 %>%
   mutate(
     # Convert the variables of the father and the 3rd child to numeric
-    across(c(WEEKSM, HOURSM, INCOME1M, FAMINC, TIMESMAR, AGEMAR, MARITAL, 
-             AGED, WEEKSD, HOURSD, INCOME1D, AGEQ3RD), as.numeric),
+    across(c(WEEKSM, HOURSM, INCOME1M, INCOME2M, FAMINC, TIMESMAR, AGEMAR, MARITAL, 
+             AGED, WEEKSD, HOURSD, INCOME1D, INCOME2D, AGEQ3RD), as.numeric),
     
     # Sex and Twins Variables
     two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
@@ -127,16 +24,16 @@ table2_data_80 <- clean_data_80 %>%
     # Mothers Variables
     age_first_birth = AGEM - AGEK,
     worked_for_pay = ifelse(WEEKSM > 0, 1, 0),
-    labor_income_95 = INCOME1M * 2.27,
+    labor_income_95 = (INCOME1M + INCOME2M) * 2.27,
     
     # Fathers Variables
     age_first_birth_dad = AGED - AGEK,
     worked_for_pay_dad = ifelse(WEEKSD > 0, 1, 0),
-    labor_income_dad_95 = INCOME1D * 2.27,
+    labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27,
     
     # Family Incomes
     family_income_95 = FAMINC * 2.27,
-    non_wife_income_95 = (FAMINC - INCOME1M) * 2.27
+    non_wife_income_95 = (FAMINC - INCOME1M - INCOME2M) * 2.27
   )
 
 # 2. SAMPLE OF MARRIED WOMEN AND THEIR HUSBANDS (1980)
@@ -216,8 +113,8 @@ final_table_80 <- col_all_women_80 %>%
 # 1. PROCESSING OF ALL VARIABLES (1990)
 table2_data_90 <- clean_data_90 %>%
   mutate(
-    across(c(WEEK89M, HOUR89M, INCOMEM1, FAMINC, MARITAL, 
-             AGED, WEEK89D, HOUR89D, INCOMED1, MULTI2ND), as.numeric),
+    across(c(WEEK89M, HOUR89M, INCOMEM1, INCOMEM2, FAMINC, MARITAL, 
+             AGED, WEEK89D, HOUR89D, INCOMED1, INCOMED2, MULTI2ND), as.numeric),
     
     two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
     two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
@@ -225,14 +122,14 @@ table2_data_90 <- clean_data_90 %>%
     
     age_first_birth = AGEM - AGEK,
     worked_for_pay = ifelse(WEEK89M > 0, 1, 0),
-    labor_income_95 = INCOMEM1 * 1.22,
+    labor_income_95 = (INCOMEM1 + INCOMEM2) * 1.22,
     
     age_first_birth_dad = AGED - AGEK,
     worked_for_pay_dad = ifelse(WEEK89D > 0, 1, 0),
-    labor_income_dad_95 = INCOMED1 * 1.22,
+    labor_income_dad_95 = (INCOMED1 + INCOMED2) * 1.22,
     
     family_income_95 = FAMINC * 1.22,
-    non_wife_income_95 = (FAMINC - INCOMEM1) * 1.22
+    non_wife_income_95 = (FAMINC - INCOMEM1 - INCOMEM2) * 1.22
   )
 
 # 2. SAMPLE OF MARRIED WOMEN AND THEIR HUSBANDS (1990)
@@ -306,7 +203,6 @@ final_table_90 <- col_all_women_90 %>%
 # ==========================================
 # PART 3: FINAL MERGE AND EXPORT (TABLE 2)
 # ==========================================
-library(gt)
 
 # Merge the clean 1980 and 1990 tables
 merged_table_2 <- final_table_80 %>%
@@ -344,3 +240,13 @@ publication_table
 
 # To save as pdf
 # gtsave(publication_table, "Table_2.png")
+
+# ==========================================
+# PART 4: ENVIRONMENT CLEANUP
+# ==========================================
+# Keep the environment clean by removing intermediate datasets and functions
+rm(table2_data_80, married_data_80, col_all_women_80, col_married_wives_80, col_husbands_80, final_table_80,
+   table2_data_90, married_data_90, col_all_women_90, col_married_wives_90, col_husbands_90, final_table_90,
+   merged_table_2, summarize_women_80, summarize_husbands_80, summarize_women_90, summarize_husbands_90)
+
+
