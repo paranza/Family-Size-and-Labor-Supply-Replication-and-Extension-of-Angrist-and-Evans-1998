@@ -13,7 +13,8 @@ data_90 = read_sas("dati/m_d_903.sas7bdat") # 1990
 clean_data_80 <- data_80 %>%
   
   # 1. Convert math/count variables to numeric to avoid character comparison errors
-  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, TWIN1ST, RACEM, SPANISHM), as.numeric)) %>%
+  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, TWIN1ST, RACEM, SPANISHM, INCOME1M, INCOME2M, 
+                  FAMINC, INCOME1D, INCOME2D, WEEKSM, HOURSM, WEEKSD, HOURSD), as.numeric)) %>%
   
   # 2. Decode the FERT variable (in Census/IPUMS data, FERT code is offset by 1)
   mutate(real_kids = FERT - 1) %>%
@@ -67,7 +68,17 @@ clean_data_80 <- data_80 %>%
     # Demographic dummies
     black      = ifelse(RACEM == 2, 1, 0),
     hispanic   = ifelse(SPANISHM > 0, 1, 0),
-    other_race = ifelse(RACEM > 2, 1, 0)
+    other_race = ifelse(RACEM > 2, 1, 0),
+    
+    # Labor variables (Deflated to 1995 dollars)
+    worked_for_pay = ifelse(WEEKSM > 0, 1, 0),
+    labor_income_95 = (INCOME1M + INCOME2M) * 2.27,
+    family_income_95 = FAMINC * 2.27,
+    non_wife_income_95 = (FAMINC - INCOME1M - INCOME2M) * 2.27,
+    
+    # Husband variables
+    worked_for_pay_dad = ifelse(WEEKSD > 0, 1, 0),
+    labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27
   )
 
 ##### CREATE married_data_80
