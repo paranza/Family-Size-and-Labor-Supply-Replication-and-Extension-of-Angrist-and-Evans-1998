@@ -8,27 +8,7 @@ library(gt)
 library(tidyr)
 
 # ==========================================
-# 1. ON-THE-FLY DATA PREPARATION
-# ==========================================
-
-# Function to create log variables needed only for Table 7
-prepare_table7_vars <- function(df) {
-  df %>%
-    mutate(
-      # Natural Log of Family Income (Set values <= 0 to 1 before logging to avoid -Inf)
-      ln_fam_inc = log(ifelse(family_income_95 <= 0, 1, family_income_95)),
-      
-      # Natural Log of Non-Wife Income (Set values <= 0 to 1 before logging)
-      ln_nonwife_inc = log(ifelse(non_wife_income_95 <= 0, 1, non_wife_income_95))
-    )
-}
-
-# Apply the function to the existing datasets
-data_80_t7_all <- prepare_table7_vars(clean_data_80)
-data_80_t7_mar <- prepare_table7_vars(married_data_80)
-
-# ==========================================
-# 2. SETUP MODEL EQUATIONS AND VARIABLES
+# 1. SETUP MODEL EQUATIONS AND VARIABLES
 # ==========================================
 
 # Define dependent variables based on your exact dataset column names
@@ -51,7 +31,7 @@ rhs_2sls_twoboys <- paste("more_than_2 + boy1st +", base_covariates,
                           "| two_boys + two_girls + boy1st +", base_covariates)
 
 # ==========================================
-# 3. HELPER FUNCTION TO RUN MODELS
+# 2. HELPER FUNCTION TO RUN MODELS
 # ==========================================
 
 # This function runs all 3 models for a given dependent variable and extracts the 'more_than_2' coefficient
@@ -96,12 +76,12 @@ run_models_for_y <- function(y_var, data, is_husband = FALSE) {
 }
 
 # ==========================================
-# 4. EXECUTE MODELS OVER ALL VARIABLES
+# 3. EXECUTE MODELS OVER ALL VARIABLES
 # ==========================================
 
 # All Women Panel
 results_all_w <- map_dfr(dep_vars_women, ~{
-  res <- run_models_for_y(.x, data_80_t7_all)
+  res <- run_models_for_y(.x, clean_data_80)
   res$DepVar <- .x
   res$Sample <- "All_Women"
   res
@@ -109,7 +89,7 @@ results_all_w <- map_dfr(dep_vars_women, ~{
 
 # Married Women Panel
 results_mar_w <- map_dfr(dep_vars_women, ~{
-  res <- run_models_for_y(.x, data_80_t7_mar)
+  res <- run_models_for_y(.x, married_data_80)
   res$DepVar <- .x
   res$Sample <- "Married_Women"
   res
@@ -117,7 +97,7 @@ results_mar_w <- map_dfr(dep_vars_women, ~{
 
 # Husbands Panel
 results_husb <- map_dfr(dep_vars_men, ~{
-  res <- run_models_for_y(.x, data_80_t7_mar, is_husband = TRUE)
+  res <- run_models_for_y(.x, married_data_80, is_husband = TRUE)
   res$DepVar <- .x
   res$Sample <- "Husbands"
   res
@@ -127,7 +107,7 @@ results_husb <- map_dfr(dep_vars_men, ~{
 all_results <- bind_rows(results_all_w, results_mar_w, results_husb)
 
 # ==========================================
-# 5. DATA RESTRUCTURING FOR GT
+# 4. DATA RESTRUCTURING FOR GT
 # ==========================================
 
 # Extract horizontal blocks from the all_results dataframe
@@ -200,7 +180,7 @@ top_rows <- data.frame(
 final_table_data <- bind_rows(top_rows, final_wide_data)
 
 # ==========================================
-# 6. GT TABLE FORMATTING
+# 5. GT TABLE FORMATTING
 # ==========================================
 
 publication_table_7 <- final_table_data %>%
@@ -242,16 +222,20 @@ publication_table_7 <- final_table_data %>%
     table.border.bottom.color = "black",
     table.border.bottom.width = px(2),
     table_body.border.bottom.width = px(0) # Removes the default bottom line to keep it clean
+  ) %>%
+  
+  tab_source_note(
+    source_note = md("Notes: The table reports estimates of the coefficient on the *More than 2 children* variable in equations (4) and (6) in the text. Other covariates in the models are *Age*, *Age at first birth*, plus indicators for *Boy 1st*, *Boy 2nd*, *Black*, *Hispanic*, and *Other race*. The variable *Boy 2nd* is excluded from equation (6). The *p*-value for the test of overidentifying restrictions associated with equation (6) is shown in brackets. Standard errors are reported in parentheses.")
   )
 
 # View the table
 publication_table_7
 
 # To save as png
-gtsave(publication_table_7, "Table_7.png")
+# gtsave(publication_table_7, "Table_7.png")
 
 # ==========================================
-# 7. ENVIRONMENT CLEANUP
+# 6. ENVIRONMENT CLEANUP
 # ==========================================
 
 # Keep only the final datasets and the publication table

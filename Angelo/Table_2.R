@@ -14,33 +14,13 @@ prepare_table2_vars <- function(df, year) {
     df %>% mutate(
       across(any_of(c("WEEKSM", "HOURSM", "INCOME1M", "INCOME2M", "FAMINC", 
                       "WEEKSD", "HOURSD", "INCOME1D", "INCOME2D", "AGEQ3RD", "AGED")), as.numeric),
-      age_first_birth = as.numeric(AGEM) - as.numeric(AGEK),
-      age_first_birth_dad = as.numeric(AGED) - as.numeric(AGEK),
-      two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
-      two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
-      twins_2 = ifelse(!is.na(AGEQ2ND) & !is.na(AGEQ3RD) & AGEQ2ND == AGEQ3RD, 1, 0),
-      worked_for_pay = ifelse(WEEKSM > 0, 1, 0),
-      labor_income_95 = (INCOME1M + INCOME2M) * 2.27,
-      worked_for_pay_dad = ifelse(WEEKSD > 0, 1, 0),
-      labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27,
-      family_income_95 = FAMINC * 2.27,
-      non_wife_income_95 = (FAMINC - INCOME1M - INCOME2M) * 2.27
+      age_first_birth_dad = as.numeric(AGED) - as.numeric(AGEK)
     )
   } else {
     df %>% mutate(
       across(any_of(c("WEEK89M", "HOUR89M", "INCOMEM1", "INCOMEM2", "FAMINC", "MARITAL", 
                       "AGED", "WEEK89D", "HOUR89D", "INCOMED1", "INCOMED2", "MULTI2ND")), as.numeric),
-      age_first_birth = as.numeric(AGEM) - as.numeric(AGEK),
-      age_first_birth_dad = as.numeric(AGED) - as.numeric(AGEK),
-      two_boys = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
-      two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
-      twins_2 = ifelse(MULTI2ND == 1, 1, 0),
-      worked_for_pay = ifelse(WEEK89M > 0, 1, 0),
-      labor_income_95 = (INCOMEM1 + INCOMEM2) * 1.22,
-      worked_for_pay_dad = ifelse(WEEK89D > 0, 1, 0),
-      labor_income_dad_95 = (INCOMED1 + INCOMED2) * 1.22,
-      family_income_95 = FAMINC * 1.22,
-      non_wife_income_95 = (FAMINC - INCOMEM1 - INCOMEM2) * 1.22
+      age_first_birth_dad = as.numeric(AGED) - as.numeric(AGEK)
     )
   }
 }
@@ -71,7 +51,7 @@ summarize_women_80 <- function(df, is_all_women = FALSE) {
       `Same sex` = sprintf("%.3f (%.3f)", mean(same_sex, na.rm=T), sd(same_sex, na.rm=T)),
       `Twins-2` = sprintf("%.4f (%.4f)", mean(twins_2, na.rm=T), sd(twins_2, na.rm=T)),
       `Age` = sprintf("%.1f (%.1f)", mean(AGEM, na.rm=T), sd(AGEM, na.rm=T)),
-      `Age at first birth` = sprintf("%.1f (%.1f)", mean(age_first_birth, na.rm=T), sd(age_first_birth, na.rm=T)),
+      `Age at first birth` = sprintf("%.1f (%.1f)", mean(mom_age_at_birth, na.rm=T), sd(mom_age_at_birth, na.rm=T)),
       `Worked for pay` = sprintf("%.3f (%.3f)", mean(worked_for_pay, na.rm=T), sd(worked_for_pay, na.rm=T)),
       `Weeks worked` = sprintf("%.1f (%.1f)", mean(WEEKSM, na.rm=T), sd(WEEKSM, na.rm=T)),
       `Hours/week` = sprintf("%.1f (%.1f)", mean(HOURSM, na.rm=T), sd(HOURSM, na.rm=T)),
@@ -120,7 +100,7 @@ summarize_women_90 <- function(df, is_all_women = FALSE) {
       `Same sex` = sprintf("%.3f (%.3f)", mean(same_sex, na.rm=T), sd(same_sex, na.rm=T)),
       `Twins-2` = sprintf("%.4f (%.4f)", mean(twins_2, na.rm=T), sd(twins_2, na.rm=T)),
       `Age` = sprintf("%.1f (%.1f)", mean(AGEM, na.rm=T), sd(AGEM, na.rm=T)),
-      `Age at first birth` = sprintf("%.1f (%.1f)", mean(age_first_birth, na.rm=T), sd(age_first_birth, na.rm=T)),
+      `Age at first birth` = sprintf("%.1f (%.1f)", mean(mom_age_at_birth, na.rm=T), sd(mom_age_at_birth, na.rm=T)),
       `Worked for pay` = sprintf("%.3f (%.3f)", mean(worked_for_pay, na.rm=T), sd(worked_for_pay, na.rm=T)),
       `Weeks worked` = sprintf("%.1f (%.1f)", mean(WEEK89M, na.rm=T), sd(WEEK89M, na.rm=T)),
       `Hours/week` = sprintf("%.1f (%.1f)", mean(HOUR89M, na.rm=T), sd(HOUR89M, na.rm=T)),
@@ -221,7 +201,10 @@ publication_table_2 <- merged_table_2 %>%
   ) %>%
   cols_align(align = "center", columns = -Variable) %>%
   cols_align(align = "left", columns = Variable) %>%
-  opt_row_striping()
+  opt_row_striping() %>%
+  tab_source_note(
+    source_note = "Notes: The samples include women aged 21-35 with two or more children except for women whose second child is less than a year old. In the 1980 PUMS, the married women sample refers to women who were married at the time of their first birth, married at the time of the survey, and married once. In the 1990 PUMS, the married women are those married at the time of the Census."
+  )
 
 # Display the final table
 publication_table_2

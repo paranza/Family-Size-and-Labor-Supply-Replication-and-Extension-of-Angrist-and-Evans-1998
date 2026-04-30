@@ -145,6 +145,10 @@ publication_table_6 <- df_combined %>%
     row_group.border.top.width = px(2),
     row_group.border.bottom.color = "black",
     row_group.border.bottom.width = px(2)
+  ) %>%
+  
+  tab_source_note(
+    source_note = md("Notes: Other covariates in the models are indicators for *Age*, *Age at first birth*, *Black*, *Hispanic*, and *Other race*. The variable *Boy 2nd* is excluded from columns (3) and (6). Standard errors are reported in parentheses.")
   )
 
 # Display the table

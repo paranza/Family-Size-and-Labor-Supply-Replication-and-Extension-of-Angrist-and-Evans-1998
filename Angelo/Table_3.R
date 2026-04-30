@@ -155,7 +155,10 @@ publication_table_3 <- merged_table_3 %>%
   ) %>%
   cols_align(align = "center", columns = -Variable) %>%
   cols_align(align = "left", columns = Variable) %>%
-  opt_row_striping()
+  opt_row_striping() %>%
+  tab_source_note(
+    source_note = "Notes: The samples are the same as in Table 2. Standard errors are reported in parentheses"
+  )
 
 # Display the final table
 publication_table_3

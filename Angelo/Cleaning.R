@@ -13,8 +13,8 @@ data_90 = read_sas("dati/m_d_903.sas7bdat") # 1990
 clean_data_80 <- data_80 %>%
   
   # 1. Convert math/count variables to numeric to avoid character comparison errors
-  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, TWIN1ST, RACEM, SPANISHM, INCOME1M, INCOME2M, 
-                  FAMINC, INCOME1D, INCOME2D, WEEKSM, HOURSM, WEEKSD, HOURSD), as.numeric)) %>%
+  mutate(across(c(AGEM, FERT, KIDCOUNT, AGEK, AGEQ2ND, AGEQ3RD, TWIN1ST, RACEM, SPANISHM, INCOME1M, INCOME2M, 
+                  FAMINC, INCOME1D, INCOME2D, WEEKSM, HOURSM, WEEKSD, HOURSD, GRADEM), as.numeric)) %>%
   
   # 2. Decode the FERT variable (in Census/IPUMS data, FERT code is offset by 1)
   mutate(real_kids = FERT - 1) %>%
@@ -65,7 +65,14 @@ clean_data_80 <- data_80 %>%
     two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
     mom_age_at_birth = AGEM - AGEK,
     
+    # Create Twins at second birth instrument (1 if 2nd and 3rd child have same age/quarter)
+    twins_2 = ifelse(!is.na(AGEQ2ND) & !is.na(AGEQ3RD) & AGEQ2ND == AGEQ3RD, 1, 0),
+    
+    # Standardize education variable name
+    years_of_education = as.numeric(GRADEM),
+    
     # Demographic dummies
+    white = ifelse(RACEM == 1, 1, 0),
     black      = ifelse(RACEM == 2, 1, 0),
     hispanic   = ifelse(SPANISHM > 0, 1, 0),
     other_race = ifelse(RACEM > 2, 1, 0),
@@ -78,7 +85,11 @@ clean_data_80 <- data_80 %>%
     
     # Husband variables
     worked_for_pay_dad = ifelse(WEEKSD > 0, 1, 0),
-    labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27
+    labor_income_dad_95 = (INCOME1D + INCOME2D) * 2.27,
+    
+    # Log Income variables
+    ln_fam_inc = log(ifelse(family_income_95 <= 0, 1, family_income_95)),
+    ln_nonwife_inc = log(ifelse(non_wife_income_95 <= 0, 1, non_wife_income_95))
   )
 
 ##### CREATE married_data_80
@@ -113,11 +124,12 @@ married_data_80 <- clean_data_80 %>%
 
 ##### CLEAN data_90
 
-# Using data_90 with the exact column names from your screenshot
+# Using data_90
 clean_data_90 <- data_90 %>%
   
   # 1. Convert math/count variables to numeric
-  mutate(across(c(AGEM, FERTIL, KIDCOUNT, AGEK, AGE2NDK, TWIN1ST, HISPM, RACEM), as.numeric)) %>%
+  mutate(across(c(AGEM, FERTIL, KIDCOUNT, AGEK, AGE2NDK, TWIN1ST, HISPM, RACEM, WEEK89M, YEARSCHM,
+                  WEEK89D, HOUR89M, HOUR89D, INCOMEM1, INCOMEM2, FAMINC, INCOMED1, INCOMED2), as.numeric)) %>%
   
   # 2. Decode the FERTIL variable (Assuming standard IPUMS +1 offset)
   mutate(real_kids = FERTIL - 1) %>%
@@ -156,15 +168,36 @@ clean_data_90 <- data_90 %>%
     # Instrumental variable (z): 1 if the first two children are the same sex
     same_sex = ifelse(boy1st == boy2nd, 1, 0),
     
+    # Standardize education variable name
+    years_of_education = as.numeric(YEARSCHM),
+    
+    # Create Twins at second birth instrument
+    twins_2 = ifelse(MULTI2ND == 1, 1, 0),
+    
     # Sex mix instruments
     two_boys  = ifelse(boy1st == 1 & boy2nd == 1, 1, 0),
     two_girls = ifelse(boy1st == 0 & boy2nd == 0, 1, 0),
     mom_age_at_birth = AGEM - AGEK,
     
     # Demographic dummies
+    white      = ifelse(RACEM == 1, 1, 0),
     black      = ifelse(RACEM == 2, 1, 0),
     hispanic   = ifelse(HISPM > 0, 1, 0),
-    other_race = ifelse(RACEM > 2, 1, 0)
+    other_race = ifelse(RACEM > 2, 1, 0),
+    
+    # Labor variables (Deflated to 1995 dollars)
+    worked_for_pay = ifelse(WEEK89M > 0, 1, 0),
+    labor_income_95 = (INCOMEM1 + INCOMEM2) * 1.22,
+    family_income_95 = FAMINC * 1.22,
+    non_wife_income_95 = (FAMINC - INCOMEM1 - INCOMEM2) * 1.22,
+    
+    # Husband variables
+    worked_for_pay_dad = ifelse(WEEK89D > 0, 1, 0),
+    labor_income_dad_95 = (INCOMED1 + INCOMED2) * 1.22,
+    
+    # Log Income variables
+    ln_fam_inc = log(ifelse(family_income_95 <= 0, 1, family_income_95)),
+    ln_nonwife_inc = log(ifelse(non_wife_income_95 <= 0, 1, non_wife_income_95)),
   )
 
 ##### CREATE married_data_90
