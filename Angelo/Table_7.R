@@ -6,6 +6,8 @@ library(broom)
 library(AER)
 library(gt)
 library(tidyr)
+library(sandwich)
+library(lmtest)
 
 # ==========================================
 # 1. SETUP MODEL EQUATIONS AND VARIABLES
@@ -52,18 +54,18 @@ run_models_for_y <- function(y_var, data, is_husband = FALSE) {
   
   # Run OLS
   mod_ols <- lm(form_ols, data = data)
-  tidy_ols <- tidy(mod_ols) %>% filter(term == "more_than_2")
+  tidy_ols <- tidy(coeftest(mod_ols, vcov = vcovHC(mod_ols, type = "HC1"))) %>% filter(term == "more_than_2")
   
   # Run 2SLS (Same Sex)
   mod_iv1 <- ivreg(form_iv1, data = data)
-  tidy_iv1 <- tidy(mod_iv1) %>% filter(term == "more_than_2")
+  tidy_iv1 <- tidy(coeftest(mod_iv1, vcov = vcovHC(mod_iv1, type = "HC1"))) %>% filter(term == "more_than_2")
   
   # Run 2SLS (Two Boys/Two Girls)
   mod_iv2 <- ivreg(form_iv2, data = data)
-  tidy_iv2 <- tidy(mod_iv2) %>% filter(term == "more_than_2")
+  tidy_iv2 <- tidy(coeftest(mod_iv2, vcov = vcovHC(mod_iv2, type = "HC1"))) %>% filter(term == "more_than_2")
   
   # Extract Overidentification Test p-value for the multiple instruments model
-  diag_iv2 <- summary(mod_iv2, diagnostics = TRUE)$diagnostics
+  diag_iv2 <- summary(mod_iv2, vcov = vcovHC(mod_iv2, type = "HC1"), diagnostics = TRUE)$diagnostics
   pval_overid <- diag_iv2["Sargan", "p-value"]
   
   # Return combined results

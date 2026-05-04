@@ -6,6 +6,8 @@ library(broom)
 library(AER)
 library(gt)
 library(tidyr)
+library(sandwich)
+library(lmtest)
 
 # ==========================================
 # 1. SETUP MODEL EQUATIONS AND VARIABLES
@@ -50,20 +52,20 @@ run_models_for_y <- function(y_var, data, is_husband = FALSE) {
   form_iv1 <- as.formula(paste(y_var, "~", rhs_2sls_samesex))
   form_iv2 <- as.formula(paste(y_var, "~", rhs_2sls_twoboys))
   
-  # Run OLS with PWGTM1 weights
+  # Run OLS with PWGTM1 weights and extract robust SEs
   mod_ols <- lm(form_ols, data = data, weights = PWGTM1)
-  tidy_ols <- tidy(mod_ols) %>% filter(term == "more_than_2")
+  tidy_ols <- tidy(coeftest(mod_ols, vcov = vcovHC(mod_ols, type = "HC1"))) %>% filter(term == "more_than_2")
   
-  # Run 2SLS (Same Sex) with PWGTM1 weights
+  # Run 2SLS (Same Sex) with PWGTM1 weights and extract robust SEs
   mod_iv1 <- ivreg(form_iv1, data = data, weights = PWGTM1)
-  tidy_iv1 <- tidy(mod_iv1) %>% filter(term == "more_than_2")
+  tidy_iv1 <- tidy(coeftest(mod_iv1, vcov = vcovHC(mod_iv1, type = "HC1"))) %>% filter(term == "more_than_2")
   
-  # Run 2SLS (Two Boys/Two Girls) with PWGTM1 weights
+  # Run 2SLS (Two Boys/Two Girls) with PWGTM1 weights and extract robust SEs
   mod_iv2 <- ivreg(form_iv2, data = data, weights = PWGTM1)
-  tidy_iv2 <- tidy(mod_iv2) %>% filter(term == "more_than_2")
+  tidy_iv2 <- tidy(coeftest(mod_iv2, vcov = vcovHC(mod_iv2, type = "HC1"))) %>% filter(term == "more_than_2")
   
-  # Extract Overidentification Test p-value for the multiple instruments model
-  diag_iv2 <- summary(mod_iv2, diagnostics = TRUE)$diagnostics
+  # Extract Overidentification Test p-value with robust covariance (Hansen's J conceptually)
+  diag_iv2 <- summary(mod_iv2, vcov = vcovHC(mod_iv2, type = "HC1"), diagnostics = TRUE)$diagnostics
   pval_overid <- diag_iv2["Sargan", "p-value"]
   
   # Return combined results
