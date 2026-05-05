@@ -86,6 +86,7 @@ custom_rows <- data.frame(
 df_1980 <- modelsummary(
   models_1980,
   coef_map  = coef_map,
+  vcov      = 'robust',
   fmt       = 4,                                      # Increase decimals to 4
   estimate  = "{estimate}<br>({std.error})",          # Put SE below estimate in same cell
   statistic = NULL,                                   # Remove dedicated SE row
@@ -104,6 +105,7 @@ df_1980 <- modelsummary(
 df_1990 <- modelsummary(
   models_1990,
   coef_map  = coef_map,
+  vcov      = "robust",
   fmt       = 4,
   estimate  = "{estimate}<br>({std.error})",
   statistic = NULL,
