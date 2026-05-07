@@ -147,6 +147,13 @@ ame_table_all <- ame_df %>%
 
 ame_table_all
 
+
+# Save IV-Probit coefficient table
+#gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
+
+# Save AME table
+#gtsave(ame_table_all, "Table_AME_IV_Probit.png")
+
 # ---------------------------------------------------------
 # PHASE 2: BOOTSTRAPPING PROPER STANDARD ERRORS
 # ---------------------------------------------------------
