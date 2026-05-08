@@ -6,17 +6,18 @@ library(boot)
 library(broom)
 library(gt)
 library(margins)
+library(marginaleffects)
+library(parallel)
 
 # Define the covariates exactly as they were in your replication script
 base_covariates <- "AGEM + mom_age_at_birth + black + hispanic + other_race"
 
 # Formulate the First Stage (Linear) and Second Stage (Probit) equations
-# Note: As in Table 7, we control for boy1st and boy2nd
 form_stage1 <- as.formula(paste("more_than_2 ~ same_sex + boy1st + boy2nd +", base_covariates))
 form_stage2 <- as.formula(paste("worked_for_pay ~ more_than_2 + v_hat + boy1st + boy2nd +", base_covariates))
 
 # ---------------------------------------------------------
-# PHASE 1: MANUAL TWO-STEP ESTIMATION (For Diagnostics)
+# PHASE 1: MANUAL TWO-STEP ESTIMATION & PROBIT TABLE
 # ---------------------------------------------------------
 
 # Step 1: Run the first stage (OLS) predicting 'more_than_2' using the instrument 'same_sex'
@@ -30,16 +31,29 @@ mod_second_stage <- glm(form_stage2,
                         family = binomial(link = "probit"), 
                         data = clean_data_80)
 
-### SAVING TABLE
-
-# Keep original variable names
+# Create and save Probit Results Table
 probit_summary_df <- tidy(mod_second_stage)
 
+# Define variable labels
+var_labels <- c(
+  "more_than_2"      = "More than 2 children",
+  "v_hat"            = "Residuals (v-hat)",
+  "boy1st"           = "Boy 1st",
+  "boy2nd"           = "Boy 2nd",
+  "AGEM"             = "Age",
+  "mom_age_at_birth" = "Age at first birth",
+  "black"            = "Black",
+  "hispanic"         = "Hispanic",
+  "other_race"       = "Other race"
+)
+
+
 publication_table_iv_probit <- probit_summary_df %>%
+  # Rename variables
+  mutate(term = recode(term, !!!var_labels)) %>%
   gt() %>%
   tab_header(
-    title = md("**Second Stage: IV-Probit Results**"),
-    subtitle = "Control Function Approach"
+    title = md("**TABLE 1 — SECOND STAGE: IV-PROBIT RESULTS**")
   ) %>%
   fmt_number(
     columns = c(estimate, std.error, statistic, p.value),
@@ -52,68 +66,144 @@ publication_table_iv_probit <- probit_summary_df %>%
     statistic = "z-value",
     p.value = "p-value"
   ) %>%
-  
-  # Highlight key variables using original names
+  # Highlight key variables (using the newly recoded names)
   tab_style(
     style = list(cell_text(weight = "bold")),
-    locations = cells_body(rows = term == "more_than_2")
+    locations = cells_body(rows = term == "More than 2 children")
   ) %>%
   tab_style(
     style = list(cell_fill(color = "lightyellow")),
-    locations = cells_body(rows = term == "v_hat")
+    locations = cells_body(rows = term == "Residuals (v-hat)")
   ) %>%
-  cols_align(
-    align = "left",
-    columns = everything()
-  ) %>%
+  # Alignments
+  cols_align(align = "left", columns = term) %>%
+  cols_align(align = "center", columns = -term) %>%
   
-  opt_row_striping() %>%
+  tab_options(
+    table.border.top.color = "black",
+    table.border.top.width = px(2),
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table_body.border.bottom.width = px(0)
+  ) %>%
   
   tab_source_note(
-    source_note = md(
-      "Notes: Probit model estimated via control-function approach. Dependent variable: worked_for_pay. Coefficients are Probit index coefficients, not marginal effects. v_hat tests for endogeneity within the control-function framework."
-    )
+    source_note = md("Notes: Probit model estimated via control-function approach. Dependent variable: *Worked for pay*. Coefficients are Probit index coefficients, not marginal effects. *v_hat* tests for endogeneity within the control-function framework.")
   )
 
 publication_table_iv_probit
+# ---------------------------------------------------------
+# PHASE 2: BOOTSTRAPPING PROPER STANDARD ERRORS FOR AMEs
+# ---------------------------------------------------------
 
-# Save the table as an image
-# gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
+# Define the custom bootstrap function for AMEs using marginaleffects
+cf_boot_function_ame <- function(data, indices) {
+  
+  # Create the resampled dataset
+  d <- data[indices, ]
+  
+  # Step 1: First stage on the resampled data
+  boot_stage1 <- lm(form_stage1, data = d)
+  d$v_hat <- residuals(boot_stage1)
+  
+  # Step 2: Second stage (Probit) on the resampled data
+  boot_stage2 <- glm(form_stage2, 
+                     family = binomial(link = "probit"), 
+                     data = d)
+  
+  # Step 3: Compute the AMEs *inside* the loop using avg_slopes (MUCH faster)
+  # This calculates the average marginal effects directly
+  ames <- avg_slopes(boot_stage2, variables = c("more_than_2", "v_hat"))
+  
+  # Extract the estimate for more_than_2
+  ame_more_than_2 <- ames$estimate[ames$term == "more_than_2"]
+  
+  # Extract the estimate for v_hat
+  ame_v_hat <- ames$estimate[ames$term == "v_hat"]
+  
+  # The function returns a vector with the two marginal effects
+  return(c(ame_more_than_2, ame_v_hat))
+}
 
-# View the results. 
-# CRITICAL CHECK: Look at the p-value for 'v_hat'. If it is significant, 
-# you have statistically proven the endogeneity of having more than 2 children!
-summary(mod_second_stage)
+# Set up parallel processing for Mac
+num_cores <- detectCores() - 1
 
+# Set the seed for reproducibility
+set.seed(30413) 
 
-# Compute AMEs
-ame_results <- margins(mod_second_stage)
+# Run the bootstrap using parallel processing
+# parallel = "multicore" is the optimal setting for macOS
+boot_results_ame <- boot(data = clean_data_80, 
+                         statistic = cf_boot_function_ame, 
+                         R = 500,
+                         parallel = "multicore",
+                         ncpus = num_cores)
 
-# Desired order
+# Display the results: t1* is the AME for more_than_2, t2* is the AME for v_hat
+print(boot_results_ame)
+
+# Calculate the 95% Confidence Intervals for the 'more_than_2' AME (Index 1)
+boot.ci(boot_results_ame, type = "perc", index = 1)
+
+# ---------------------------------------------------------
+# PHASE 3: COMPUTE BASE AMES AND BUILD FINAL UPDATED TABLE
+# ---------------------------------------------------------
+
+# Compute baseline AMEs on the original sample using avg_slopes
+ame_results <- avg_slopes(mod_second_stage)
+
+# Create the initial dataframe mapping the output of avg_slopes
+ame_df <- ame_results %>%
+  as.data.frame() %>%
+  rename(
+    factor = term,
+    AME = estimate,
+    SE = std.error,
+    z = statistic,
+    p = p.value
+  )
+
+# Desired order for the table
 var_order <- c(
-  "more_than_2",
-  "v_hat",
-  "boy1st",
-  "boy2nd",
-  "AGEM",
-  "mom_age_at_birth",
-  "black",
-  "hispanic",
-  "other_race"
+  "more_than_2", "v_hat", "boy1st", "boy2nd", "AGEM", 
+  "mom_age_at_birth", "black", "hispanic", "other_race"
 )
 
-ame_df <- summary(ame_results) %>%
-  as.data.frame() %>%
+# Filter and reorder
+ame_df <- ame_df %>%
   filter(factor %in% var_order) %>%
   mutate(factor = factor(factor, levels = var_order)) %>%
   arrange(factor)
 
+# Extract the bootstrapped Standard Errors from the boot object
+boot_se_more_than_2 <- sd(boot_results_ame$t[, 1])
+boot_se_v_hat       <- sd(boot_results_ame$t[, 2])
+
+# Replace the old SEs with the bootstrapped ones and recalculate z/p-values
+ame_df <- ame_df %>%
+  mutate(
+    SE = case_when(
+      factor == "more_than_2" ~ boot_se_more_than_2,
+      factor == "v_hat"       ~ boot_se_v_hat,
+      TRUE ~ SE 
+    ),
+    z = case_when(
+      factor %in% c("more_than_2", "v_hat") ~ AME / SE,
+      TRUE ~ z
+    ),
+    p = case_when(
+      factor %in% c("more_than_2", "v_hat") ~ 2 * (1 - pnorm(abs(z))),
+      TRUE ~ p
+    )
+  )
+
+# Build the final stylized table
 ame_table_all <- ame_df %>%
   select(factor, AME, SE, z, p) %>%
+  mutate(factor = recode(factor, !!!var_labels)) %>%
   gt() %>%
   tab_header(
-    title = md("**Average Marginal Effects: IV-Probit**"),
-    subtitle = "Control Function Approach"
+    title = md("**TABLE 2 — AVERAGE MARGINAL EFFECTS: IV-PROBIT**")
   ) %>%
   fmt_number(
     columns = c(AME, SE, z, p),
@@ -128,67 +218,30 @@ ame_table_all <- ame_df %>%
   ) %>%
   tab_style(
     style = list(cell_text(weight = "bold")),
-    locations = cells_body(rows = factor == "more_than_2")
+    locations = cells_body(rows = factor == "More than 2 children")
   ) %>%
   tab_style(
     style = list(cell_fill(color = "lightyellow")),
-    locations = cells_body(rows = factor == "v_hat")
+    locations = cells_body(rows = factor == "Residuals (v-hat)")
   ) %>%
-  cols_align(
-    align = "left",
-    columns = everything()
+  cols_align(align = "left", columns = factor) %>%
+  cols_align(align = "center", columns = -factor) %>%
+  
+  # Updated Table Options
+  tab_options(
+    table.border.top.color = "black",
+    table.border.top.width = px(2),
+    table.border.bottom.color = "black",
+    table.border.bottom.width = px(2),
+    table_body.border.bottom.width = px(0)
   ) %>%
-  opt_row_striping() %>%
+  
   tab_source_note(
-    source_note = md(
-      "Notes: Average marginal effects from IV-Probit control-function model. Dependent variable: worked_for_pay."
-    )
+    source_note = md("Notes: Average marginal effects from IV-Probit control-function model. Dependent variable: *Worked for pay*.")
   )
 
 ame_table_all
 
-
-# Save IV-Probit coefficient table
+# Optional: Save tables
 #gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
-
-# Save AME table
 #gtsave(ame_table_all, "Table_AME_IV_Probit.png")
-
-# ---------------------------------------------------------
-# PHASE 2: BOOTSTRAPPING PROPER STANDARD ERRORS
-# ---------------------------------------------------------
-
-# Define the custom bootstrap function
-# This function takes the data and a vector of random indices, runs BOTH steps, 
-# and returns the coefficients of interest.
-cf_boot_function <- function(data, indices) {
-  
-  # Create the resampled dataset
-  d <- data[indices, ]
-  
-  # Step 1 (on resampled data)
-  boot_stage1 <- lm(form_stage1, data = d)
-  d$v_hat <- residuals(boot_stage1)
-  
-  # Step 2 (on resampled data)
-  boot_stage2 <- glm(form_stage2, 
-                     family = binomial(link = "probit"), 
-                     data = d)
-  
-  # We only really need to extract the coefficients for 'more_than_2' and 'v_hat'
-  return(coef(boot_stage2)[c("more_than_2", "v_hat")])
-}
-
-# Run the bootstrap. 
-# NOTE: R = 500 is used here for time. For your final submission, you might want 
-# to bump this up to R = 1000 if your computer can handle the computation time.
-set.seed(30413) # Using your course code for good luck!
-boot_results <- boot(data = clean_data_80, 
-                     statistic = cf_boot_function, 
-                     R = 500)
-
-# Display the bootstrapped standard errors
-print(boot_results)
-
-# To calculate the 95% Confidence Intervals for the 'more_than_2' coefficient (Index 1):
-boot.ci(boot_results, type = "perc", index = 1)
