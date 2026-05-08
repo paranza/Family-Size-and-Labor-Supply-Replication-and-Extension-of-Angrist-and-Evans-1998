@@ -5,3 +5,4 @@
 dati/
 *.sas
 privato/
+.DS_Store
