@@ -1,4 +1,13 @@
-###### TABLE 8
+# ==========================================
+# TABLE 8
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 library(dplyr)
 library(purrr)
@@ -13,11 +22,11 @@ library(lmtest)
 # 1. SETUP MODEL EQUATIONS AND VARIABLES
 # ==========================================
 
-# Define dependent variables based on your exact 1990 dataset column names
+# Define dependent variables
 dep_vars_women <- c("worked_for_pay", "WEEK89M", "HOUR89M", "labor_income_95", "ln_fam_inc", "ln_nonwife_inc")
 dep_vars_men   <- c("worked_for_pay_dad", "WEEK89D", "HOUR89D", "labor_income_dad_95", "dummy_fam", "dummy_nonwife") 
 
-# Define base covariates (Same as 1980)
+# Define base covariates
 base_covariates <- "AGEM + mom_age_at_birth + black + hispanic + other_race"
 
 # Define the right-hand sides of the equations
@@ -39,7 +48,7 @@ rhs_2sls_twoboys <- paste("more_than_2 + boy1st +", base_covariates,
 # This function runs all 3 models for a given dependent variable and extracts the 'more_than_2' coefficient
 run_models_for_y <- function(y_var, data, is_husband = FALSE) {
   
-  # Skip family/non-wife income rows for husband columns (as per Table 8 layout)
+  # Skip family/non-wife income rows for husband columns
   if (is_husband && y_var %in% c("dummy_fam", "dummy_nonwife")) {
     return(data.frame(
       Model = c("OLS", "2SLS_SameSex", "2SLS_TwoBoys"),

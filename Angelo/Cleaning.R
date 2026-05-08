@@ -1,4 +1,7 @@
-# ANGELO 
+# ==========================================
+# CLEANING SCRIPT
+# ==========================================
+
 library(dplyr)
 library(haven)
 library(tidyr)

@@ -1,4 +1,13 @@
-###### TABLE 7
+# ==========================================
+# TABLE 7
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 library(dplyr)
 library(purrr)
@@ -13,7 +22,7 @@ library(lmtest)
 # 1. SETUP MODEL EQUATIONS AND VARIABLES
 # ==========================================
 
-# Define dependent variables based on your exact dataset column names
+# Define dependent variables
 dep_vars_women <- c("worked_for_pay", "WEEKSM", "HOURSM", "labor_income_95", "ln_fam_inc", "ln_nonwife_inc")
 dep_vars_men   <- c("worked_for_pay_dad", "WEEKSD", "HOURSD", "labor_income_dad_95", "dummy_fam", "dummy_nonwife") 
 
@@ -39,7 +48,7 @@ rhs_2sls_twoboys <- paste("more_than_2 + boy1st +", base_covariates,
 # This function runs all 3 models for a given dependent variable and extracts the 'more_than_2' coefficient
 run_models_for_y <- function(y_var, data, is_husband = FALSE) {
   
-  # Skip family/non-wife income rows for husband columns (as per Table 7 layout)
+  # Skip family/non-wife income rows for husband columns
   if (is_husband && y_var %in% c("dummy_fam", "dummy_nonwife")) {
     return(data.frame(
       Model = c("OLS", "2SLS_SameSex", "2SLS_TwoBoys"),
@@ -131,8 +140,6 @@ formatted_results <- all_results %>%
   select(DepVar, Col_ID, Formatted_Cell) %>%
   pivot_wider(names_from = Col_ID, values_from = Formatted_Cell)
 
-# Map internal variable names to publication-ready labels WITH HTML INDENTATION
-# &nbsp; adds non-breaking spaces so they appear nested under "Dependent variable:"
 dep_var_mapping <- c(
   "&nbsp;&nbsp;&nbsp;*Worked for pay*", 
   "&nbsp;&nbsp;&nbsp;*Weeks worked*", 
@@ -155,7 +162,7 @@ final_wide_data <- cbind(
 )
 
 # Clear out the 'All Women' columns for 'ln(Non-wife income)' 
-# Set to NA so gt replaces them with an em-dash, matching the paper
+# Set to NA so gt replaces them with an em-dash
 final_wide_data <- final_wide_data %>%
   mutate(
     All_Women_OLS = ifelse(Variable == "&nbsp;&nbsp;&nbsp;*ln(Non-wife income)*", NA_character_, All_Women_OLS),

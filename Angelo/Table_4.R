@@ -1,4 +1,13 @@
-###### TABLE 4
+# ==========================================
+# TABLE 4
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 # Load necessary libraries
 library(dplyr)
@@ -12,7 +21,6 @@ library(tidyr)
 # ==========================================
 
 # Define the exact list of demographic variables to iterate over
-# Note: these must match the columns in your clean_data_80 and clean_data_90
 demographic_vars <- c(
   "AGEM", 
   "mom_age_at_birth", 
@@ -130,15 +138,15 @@ publication_table_4 <- combined_results %>%
   cols_align(align = "center", columns = c("Col1", "Col2", "Col3")) %>%
   cols_align(align = "left", columns = "Raw_Var") %>%
   opt_row_striping() %>%
-  # Style the table borders to mimic academic journals
+  # Style the table borders
   tab_options(
     table.border.top.color = "black",
     table.border.top.width = px(2),
     table.border.bottom.color = "black",
     table.border.bottom.width = px(2),
-    table_body.border.bottom.width = px(0) # Remove default bottom line
+    table_body.border.bottom.width = px(0)
   ) %>%
-  # Add the footnote exactly as it appears in the paper
+  # Add the footnote
   tab_source_note(
     source_note = "Notes: The samples are the same as in Table 2. Standard errors are reported in parentheses."
   )
@@ -153,4 +161,4 @@ publication_table_4
 # 6. ENVIRONMENT CLEANUP
 # ==========================================
 # Keep the environment clean by removing intermediate datasets and functions
-rm(list = setdiff(ls(), c('clean_data_80', 'clean_data_90', 'married_data_80', 'married_data_90')))
+rm(list = setdiff(ls(), c('clean_data_80', 'clean_data_90', 'married_data_80', 'married_data_90', 'publication_table_4')))

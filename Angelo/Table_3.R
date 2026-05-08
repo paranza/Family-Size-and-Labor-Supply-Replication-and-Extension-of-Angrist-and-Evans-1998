@@ -1,4 +1,13 @@
-###### TABLE 3
+# ==========================================
+# TABLE 3
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 library(dplyr)
 library(haven)
@@ -120,7 +129,7 @@ publication_table_3 <- merged_table_3 %>%
     id = "spanner_married_women",
     columns = c(`Frac_Sample_Marr_80`, `Had_Child_Marr_80`, `Frac_Sample_Marr_90`, `Had_Child_Marr_90`)
   ) %>%
-  # Sub-level spanners (1980 vs 1990) - ADDED EXPLICIT IDs HERE
+  # Sub-level spanners (1980 vs 1990)
   tab_spanner(
     label = "1980 PUMS",
     id = "1980_all",
@@ -171,4 +180,4 @@ publication_table_3
 
 # Keep only the final married datasets and the raw clean ones
 rm(list = setdiff(ls(), c("clean_data_80", "clean_data_90", 
-                          "married_data_80", "married_data_90")))
+                          "married_data_80", "married_data_90", "publication_table_3")))

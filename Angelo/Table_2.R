@@ -1,4 +1,13 @@
-###### TABLE 2
+# ==========================================
+# TABLE 2
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 library(dplyr)
 library(haven)
@@ -216,6 +225,6 @@ publication_table_2
 # PART 3: ENVIRONMENT CLEANUP
 # ==========================================
 # Keep the environment clean by removing intermediate datasets and functions
-rm(list = setdiff(ls(), c('clean_data_80', 'clean_data_90', 'married_data_80', 'married_data_90')))
+rm(list = setdiff(ls(), c('clean_data_80', 'clean_data_90', 'married_data_80', 'married_data_90', 'publication_table_2')))
 
 

@@ -1,6 +1,14 @@
 # ==========================================
 # EXTENSION: IV PROBIT VIA CONTROL FUNCTION
 # ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
+
 library(dplyr)
 library(boot)
 library(broom)
@@ -9,16 +17,16 @@ library(margins)
 library(marginaleffects)
 library(parallel)
 
-# Define the covariates exactly as they were in your replication script
+# Define the covariates
 base_covariates <- "AGEM + mom_age_at_birth + black + hispanic + other_race"
 
 # Formulate the First Stage (Linear) and Second Stage (Probit) equations
 form_stage1 <- as.formula(paste("more_than_2 ~ same_sex + boy1st + boy2nd +", base_covariates))
 form_stage2 <- as.formula(paste("worked_for_pay ~ more_than_2 + v_hat + boy1st + boy2nd +", base_covariates))
 
-# ---------------------------------------------------------
-# PHASE 1: MANUAL TWO-STEP ESTIMATION & PROBIT TABLE
-# ---------------------------------------------------------
+# ==========================================
+# 1. MANUAL TWO-STEP ESTIMATION & PROBIT TABLE
+# ==========================================
 
 # Step 1: Run the first stage (OLS) predicting 'more_than_2' using the instrument 'same_sex'
 mod_first_stage <- lm(form_stage1, data = clean_data_80)
@@ -66,7 +74,7 @@ publication_table_iv_probit <- probit_summary_df %>%
     statistic = "z-value",
     p.value = "p-value"
   ) %>%
-  # Highlight key variables (using the newly recoded names)
+  # Highlight key variables
   tab_style(
     style = list(cell_text(weight = "bold")),
     locations = cells_body(rows = term == "More than 2 children")
@@ -91,10 +99,12 @@ publication_table_iv_probit <- probit_summary_df %>%
     source_note = md("Notes: Probit model estimated via control-function approach. Dependent variable: *Worked for pay*. Coefficients are Probit index coefficients, not marginal effects. *v_hat* tests for endogeneity within the control-function framework.")
   )
 
+# View the table
 publication_table_iv_probit
-# ---------------------------------------------------------
-# PHASE 2: BOOTSTRAPPING PROPER STANDARD ERRORS FOR AMEs
-# ---------------------------------------------------------
+
+# ==========================================
+# 2. BOOTSTRAPPING PROPER STANDARD ERRORS FOR AMEs
+# ==========================================
 
 # Define the custom bootstrap function for AMEs using marginaleffects
 cf_boot_function_ame <- function(data, indices) {
@@ -111,8 +121,7 @@ cf_boot_function_ame <- function(data, indices) {
                      family = binomial(link = "probit"), 
                      data = d)
   
-  # Step 3: Compute the AMEs *inside* the loop using avg_slopes (MUCH faster)
-  # This calculates the average marginal effects directly
+  # Step 3: Compute the AMEs *inside* the loop using avg_slopes
   ames <- avg_slopes(boot_stage2, variables = c("more_than_2", "v_hat"))
   
   # Extract the estimate for more_than_2
@@ -132,7 +141,6 @@ num_cores <- detectCores() - 1
 set.seed(30413) 
 
 # Run the bootstrap using parallel processing
-# parallel = "multicore" is the optimal setting for macOS
 boot_results_ame <- boot(data = clean_data_80, 
                          statistic = cf_boot_function_ame, 
                          R = 500,
@@ -145,9 +153,9 @@ print(boot_results_ame)
 # Calculate the 95% Confidence Intervals for the 'more_than_2' AME (Index 1)
 boot.ci(boot_results_ame, type = "perc", index = 1)
 
-# ---------------------------------------------------------
-# PHASE 3: COMPUTE BASE AMES AND BUILD FINAL UPDATED TABLE
-# ---------------------------------------------------------
+# ==========================================
+# 3. COMPUTE BASE AMES AND BUILD FINAL UPDATED TABLE
+# ==========================================
 
 # Compute baseline AMEs on the original sample using avg_slopes
 ame_results <- avg_slopes(mod_second_stage)
@@ -240,8 +248,20 @@ ame_table_all <- ame_df %>%
     source_note = md("Notes: Average marginal effects from IV-Probit control-function model. Dependent variable: *Worked for pay*.")
   )
 
+# View the table
 ame_table_all
 
-# Optional: Save tables
-#gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
-#gtsave(ame_table_all, "Table_AME_IV_Probit.png")
+# To save as png
+# gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
+# gtsave(ame_table_all, "Table_AME_IV_Probit.png")
+
+# ==========================================
+# 4. ENVIRONMENT CLEANUP
+# ==========================================
+
+# Keep only the final datasets and the publication table
+rm(list = setdiff(ls(), c(
+  "clean_data_80", "clean_data_90", 
+  "married_data_80", "married_data_90", 
+  "publication_table_iv_probit", "ame_table_all"
+)))

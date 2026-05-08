@@ -1,4 +1,13 @@
-###### TABLE 5
+# ==========================================
+# TABLE 5
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 # Load necessary libraries
 library(dplyr)
@@ -6,9 +15,9 @@ library(purrr)
 library(broom)
 library(gt)
 library(tidyr)
-library(AER)      # Necessary for ivreg (instrumental variable regressions)
-library(sandwich) # Necessary for robust standard errors
-library(lmtest)   # Necessary for coeftest (to apply robust SEs)
+library(AER)      
+library(sandwich) 
+library(lmtest)   
 
 # ==========================================
 # 1. SETUP OUTCOME VARIABLES AND FORMATTING
@@ -53,7 +62,7 @@ var_labels <- c(
 # 2. HELPER FUNCTIONS FOR CALCULATIONS
 # ==========================================
 
-# Function to format numbers with the exact precision shown in the paper
+# Function to format numbers
 format_vals <- function(y_var, est, se, is_wald = FALSE) {
   if (is.na(est)) return("")
   
@@ -146,7 +155,7 @@ block_90_samesex <- map_dfr(outcome_vars, ~calc_wald_block(.x, "same_sex", clean
 # Block 3: 1980 PUMS - Twins-2 Instrument (Unweighted)
 block_80_twins <- map_dfr(outcome_vars, ~calc_wald_block(.x, "twins_2", clean_data_80_5, use_weights = FALSE))
 
-# Final dataset composition (Columns reordered to match paper: Mean Diff -> More2 -> Kids)
+# Final dataset composition
 combined_results <- data.frame(
   Variable = var_labels,
   
@@ -173,7 +182,7 @@ publication_table_5 <- combined_results %>%
   tab_header(
     title = md("**TABLE 5—WALD ESTIMATES OF LABOR-SUPPLY MODELS**")
   ) %>%
-  # Column labels formatted exactly as the original text wrap
+  # Column labels
   cols_label(
     Variable = "Variable",
     MD_80_SS = md("Mean<br>difference<br>by *Same*<br>*sex*"),
@@ -204,7 +213,7 @@ publication_table_5 <- combined_results %>%
   cols_align(align = "center", columns = -Variable) %>%
   cols_align(align = "left", columns = "Variable") %>%
   
-  # Add borders mimicking academic styles and remove the grey stripes
+  # Add borders and remove the grey stripes
   tab_options(
     table.border.top.color = "black",
     table.border.top.width = px(2),

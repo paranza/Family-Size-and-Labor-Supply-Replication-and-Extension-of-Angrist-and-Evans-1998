@@ -1,4 +1,13 @@
-###### TABLE 6
+# ==========================================
+# TABLE 6
+# ==========================================
+
+# ==============================================================================
+# REPLICATION NOTE:
+# Please run the cleaning script ("Cleaning.R") prior to 
+# executing this file. This script relies on the cleaned data
+# being present in your global environment.
+# ==============================================================================
 
 library(dplyr)
 library(modelsummary)
@@ -87,19 +96,19 @@ df_1980 <- modelsummary(
   models_1980,
   coef_map  = coef_map,
   vcov      = 'robust',
-  fmt       = 4,                                      # Increase decimals to 4
-  estimate  = "{estimate}<br>({std.error})",          # Put SE below estimate in same cell
-  statistic = NULL,                                   # Remove dedicated SE row
+  fmt       = 4,                                      
+  estimate  = "{estimate}<br>({std.error})",          
+  statistic = NULL,                                   
   gof_map   = gof_mapping,
   add_rows  = custom_rows,
   output    = "data.frame"
 ) %>%
   mutate(
-    term = factor(term, levels = exact_row_order),    # Force custom ordering
-    Panel = "1980 PUMS"                               # Group identifier
+    term = factor(term, levels = exact_row_order),    
+    Panel = "1980 PUMS"                               
   ) %>%
   arrange(term) %>%
-  select(-part, -statistic)                           # Drop internal metadata
+  select(-part, -statistic)                           
 
 # Generate 1990 dataframe
 df_1990 <- modelsummary(
@@ -166,4 +175,4 @@ publication_table_6
 # Keep only the final datasets and the table object
 rm(list = setdiff(ls(), c(
   "clean_data_80", "clean_data_90", 
-  "married_data_80", "married_data_90")))
+  "married_data_80", "married_data_90", "publication_table_6")))
