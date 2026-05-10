@@ -99,7 +99,7 @@ publication_table_iv_probit <- probit_summary_df %>%
     source_note = md("Notes: Probit model estimated via control-function approach. Dependent variable: *Worked for pay*. Coefficients are Probit index coefficients, not marginal effects. *v_hat* tests for endogeneity within the control-function framework.")
   )
 
-# View the table
+# Display the final table
 publication_table_iv_probit
 
 # ==========================================
@@ -224,10 +224,15 @@ ame_table_all <- ame_df %>%
     z = "z-value",
     p = "p-value"
   ) %>%
-  tab_style(
-    style = list(cell_text(weight = "bold")),
-    locations = cells_body(rows = factor == "More than 2 children")
+  
+  cols_width(
+    everything() ~ pct(20) 
   ) %>%
+
+tab_style(
+  style = list(cell_text(weight = "bold")),
+  locations = cells_body(rows = factor == "More than 2 children")
+) %>%
   tab_style(
     style = list(cell_fill(color = "lightyellow")),
     locations = cells_body(rows = factor == "Residuals (v-hat)")
@@ -248,7 +253,7 @@ ame_table_all <- ame_df %>%
     source_note = md("Notes: Average marginal effects from IV-Probit control-function model. Dependent variable: *Worked for pay*.")
   )
 
-# View the table
+# Display the final table
 ame_table_all
 
 # To save as png
@@ -259,7 +264,7 @@ ame_table_all
 # 4. ENVIRONMENT CLEANUP
 # ==========================================
 
-# Keep only the final datasets and the publication table
+# Keep only the final datasets and the publication tables
 rm(list = setdiff(ls(), c(
   "clean_data_80", "clean_data_90", 
   "married_data_80", "married_data_90", 
