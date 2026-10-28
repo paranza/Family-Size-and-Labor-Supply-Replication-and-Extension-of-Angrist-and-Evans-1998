@@ -1,3 +1,4 @@
+# Historical analysis variant. See archive/README.md before running.
 # ==========================================
 # EXTENSION: IV PROBIT VIA CONTROL FUNCTION
 # ==========================================
@@ -62,11 +63,11 @@ publication_table_iv_probit <- probit_summary_df %>%
 publication_table_iv_probit
 
 # Save the table as an image
-# gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
+# gtsave(publication_table_iv_probit, "archive/tables/iv_probit_coefficients.png")
 
 # View the results. 
 # CRITICAL CHECK: Look at the p-value for 'v_hat'. If it is significant, 
-# you have statistically proven the endogeneity of having more than 2 children!
+# this is evidence against exogeneity under the control-function assumptions.
 summary(mod_second_stage)
 
 
@@ -98,7 +99,7 @@ cf_boot_function <- function(data, indices) {
 # Run the bootstrap. 
 # NOTE: R = 500 is used here for time. For your final submission, you might want 
 # to bump this up to R = 1000 if your computer can handle the computation time.
-set.seed(30413) # Using your course code for good luck!
+set.seed(30413) # Reproducible bootstrap seed.
 boot_results <- boot(data = clean_data_80, 
                      statistic = cf_boot_function, 
                      R = 500)
@@ -107,4 +108,7 @@ boot_results <- boot(data = clean_data_80,
 print(boot_results)
 
 # To calculate the 95% Confidence Intervals for the 'more_than_2' coefficient (Index 1):
-boot.ci(boot_results, type = "perc", index = 1)
+boot.ci(boot_results, type = "perc", index = 2)
+
+
+

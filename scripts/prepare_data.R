@@ -7,8 +7,8 @@ library(haven)
 library(tidyr)
 library(gt)
 
-data_80 = read_sas("dati/m_d_806.sas7bdat") # 1980
-data_90 = read_sas("dati/m_d_903.sas7bdat") # 1990
+data_80 = read_sas("data/raw/m_d_806.sas7bdat") # 1980
+data_90 = read_sas("data/raw/m_d_903.sas7bdat") # 1990
 
 
 ##### CLEAN data_80

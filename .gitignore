@@ -4,5 +4,8 @@
 .Ruserdata
 dati/
 *.sas
+*.sas7bdat
+data/raw/
+local_materials/
 privato/
 .DS_Store

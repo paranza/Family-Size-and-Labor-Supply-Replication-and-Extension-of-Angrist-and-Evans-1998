@@ -4,7 +4,7 @@
 
 # ==============================================================================
 # REPLICATION NOTE:
-# Please run the cleaning script ("Cleaning.R") prior to 
+# Please run the cleaning script ("scripts/prepare_data.R") prior to 
 # executing this file. This script relies on the cleaned data
 # being present in your global environment.
 # ==============================================================================
@@ -219,7 +219,7 @@ publication_table_2 <- merged_table_2 %>%
 publication_table_2
 
 # To save as png
-# gtsave(publication_table_2, "Table_2.png")
+# gtsave(publication_table_2, "results/tables/table_02.png")
 
 # ==========================================
 # PART 3: ENVIRONMENT CLEANUP

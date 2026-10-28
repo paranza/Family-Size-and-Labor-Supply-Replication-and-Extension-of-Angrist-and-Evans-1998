@@ -4,7 +4,7 @@
 
 # ==============================================================================
 # REPLICATION NOTE:
-# Please run the cleaning script ("Cleaning.R") prior to 
+# Please run the cleaning script ("scripts/prepare_data.R") prior to 
 # executing this file. This script relies on the cleaned data
 # being present in your global environment.
 # ==============================================================================
@@ -111,8 +111,8 @@ calc_wald_block <- function(y_var, z_var, data, use_weights = FALSE) {
   
   # If the row corresponds to the X variables, output an em-dash as in the paper
   if (y_var %in% c("more_than_2", "real_kids")) {
-    wald_kids <- "—"
-    wald_more2 <- "—"
+    wald_kids <- ":"
+    wald_more2 <- ":"
   } else {
     # 2. Wald estimate using 'More than 2 children' as the endogenous covariate
     form_iv2 <- as.formula(paste(y_var, "~ more_than_2 |", z_var))
@@ -180,7 +180,7 @@ publication_table_5 <- combined_results %>%
   gt() %>%
   # Main title
   tab_header(
-    title = md("**TABLE 5—WALD ESTIMATES OF LABOR-SUPPLY MODELS**")
+    title = md("**TABLE 5:WALD ESTIMATES OF LABOR-SUPPLY MODELS**")
   ) %>%
   # Column labels
   cols_label(
@@ -229,7 +229,7 @@ publication_table_5 <- combined_results %>%
 publication_table_5
 
 # To save as png
-# gtsave(publication_table_5, "Table_5.png")
+# gtsave(publication_table_5, "results/tables/table_05.png")
 
 # ==========================================
 # 5. ENVIRONMENT CLEANUP

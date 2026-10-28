@@ -1,9 +1,12 @@
-###### TABLE 7
+# Education subgroup analysis, 1980 sample
+# Run scripts/prepare_data.R first in the same R session.
 
 library(dplyr)
 library(purrr)
 library(broom)
 library(AER)
+library(sandwich)
+library(lmtest)
 library(gt)
 library(tidyr)
 
@@ -199,13 +202,13 @@ final_wide_data <- final_wide_data %>%
 # Create the custom top rows for Methods, Instruments, and the Header
 top_rows <- data.frame(
   Variable = c("Estimation method", "Instrument for *More than 2 children*", "Dependent variable:"),
-  All_Women_OLS = c("OLS", "—", ""),
+  All_Women_OLS = c("OLS", ":", ""),
   All_Women_2SLS_SameSex = c("2SLS", "*Same sex*", ""),
   All_Women_2SLS_TwoBoys = c("2SLS", "*Two boys*,<br>*Two girls*", ""),
-  Married_Women_OLS = c("OLS", "—", ""),
+  Married_Women_OLS = c("OLS", ":", ""),
   Married_Women_2SLS_SameSex = c("2SLS", "*Same sex*", ""),
   Married_Women_2SLS_TwoBoys = c("2SLS", "*Two boys*,<br>*Two girls*", ""),
-  Husbands_OLS = c("OLS", "—", ""),
+  Husbands_OLS = c("OLS", ":", ""),
   Husbands_2SLS_SameSex = c("2SLS", "*Same sex*", ""),
   Husbands_2SLS_TwoBoys = c("2SLS", "*Two boys*,<br>*Two girls*", ""),
   stringsAsFactors = FALSE
@@ -221,7 +224,7 @@ final_table_data <- bind_rows(top_rows, final_wide_data)
 publication_table_7 <- final_table_data %>%
   gt() %>%
   tab_header(
-    title = md("**Table 7 — OLS AND 2SLS ESTIMATES OF LABOR-SUPPLY MODELS USING 1980 CENSUS DATA**")
+    title = md("**Table 7 : OLS AND 2SLS ESTIMATES OF LABOR-SUPPLY MODELS USING 1980 CENSUS DATA**")
   ) %>%
   # Add exact column numbers
   cols_label(
@@ -244,7 +247,7 @@ publication_table_7 <- final_table_data %>%
   # Centering and missing values
   cols_align(align = "center", columns = -Variable) %>%
   cols_align(align = "left", columns = Variable) %>%
-  sub_missing(missing_text = "—") %>%
+  sub_missing(missing_text = ":") %>%
   # Add a thin border under the second row to separate headers from data
   tab_style(
     style = cell_borders(sides = "bottom", color = "black", weight = px(1)),
@@ -267,7 +270,7 @@ publication_table_7 <- final_table_data %>%
 publication_table_7
 
 # To save as png
-# gtsave(publication_table_7, "Table_7.png")
+# gtsave(publication_table_7, "results/tables/education_subgroups.png")
 
 # ==========================================
 # 6. ENVIRONMENT CLEANUP

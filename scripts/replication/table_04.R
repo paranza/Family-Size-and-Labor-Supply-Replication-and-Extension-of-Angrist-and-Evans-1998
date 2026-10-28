@@ -4,7 +4,7 @@
 
 # ==============================================================================
 # REPLICATION NOTE:
-# Please run the cleaning script ("Cleaning.R") prior to 
+# Please run the cleaning script ("scripts/prepare_data.R") prior to 
 # executing this file. This script relies on the cleaned data
 # being present in your global environment.
 # ==============================================================================
@@ -119,7 +119,7 @@ publication_table_4 <- combined_results %>%
   gt() %>%
   # Add the main title
   tab_header(
-    title = md("**Table 4 — DIFFERENCES IN MEANS FOR DEMOGRAPHIC VARIABLES BY *SAME SEX* AND *TWINS-2***")
+    title = md("**Table 4 : DIFFERENCES IN MEANS FOR DEMOGRAPHIC VARIABLES BY *SAME SEX* AND *TWINS-2***")
   ) %>%
   # Rename columns to match the paper's specific sub-headers
   cols_label(
@@ -155,7 +155,7 @@ publication_table_4 <- combined_results %>%
 publication_table_4
 
 # To save as png
-# gtsave(publication_table_4, "Table_4.png")
+# gtsave(publication_table_4, "results/tables/table_04.png")
 
 # ==========================================
 # 6. ENVIRONMENT CLEANUP

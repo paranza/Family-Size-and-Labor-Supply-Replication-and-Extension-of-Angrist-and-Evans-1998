@@ -4,7 +4,7 @@
 
 # ==============================================================================
 # REPLICATION NOTE:
-# Please run the cleaning script ("Cleaning.R") prior to 
+# Please run the cleaning script ("scripts/prepare_data.R") prior to 
 # executing this file. This script relies on the cleaned data
 # being present in your global environment.
 # ==============================================================================
@@ -85,7 +85,7 @@ calculate_table3_stats <- function(df) {
   # Step E: String formatting "Mean (SE)"
   ordered_results %>%
     mutate(
-      `Fraction of sample` = ifelse(is.na(frac_sample), "—", sprintf("%.3f", frac_sample)),
+      `Fraction of sample` = ifelse(is.na(frac_sample), ":", sprintf("%.3f", frac_sample)),
       `Fraction that had another child` = sprintf("%.3f (%.3f)", prob_another, se_another)
     ) %>%
     select(Variable, `Fraction of sample`, `Fraction that had another child`)
@@ -173,7 +173,7 @@ publication_table_3 <- merged_table_3 %>%
 publication_table_3
 
 # To save as png
-# gtsave(publication_table_3, "Table_3.png")
+# gtsave(publication_table_3, "results/tables/table_03.png")
 
 
 # 5. ENVIRONMENT CLEANUP

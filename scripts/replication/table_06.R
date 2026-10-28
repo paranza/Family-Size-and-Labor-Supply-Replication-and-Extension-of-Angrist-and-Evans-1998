@@ -4,7 +4,7 @@
 
 # ==============================================================================
 # REPLICATION NOTE:
-# Please run the cleaning script ("Cleaning.R") prior to 
+# Please run the cleaning script ("scripts/prepare_data.R") prior to 
 # executing this file. This script relies on the cleaned data
 # being present in your global environment.
 # ==============================================================================
@@ -140,14 +140,14 @@ df_combined <- bind_rows(df_1980, df_1990) %>%
 publication_table_6 <- df_combined %>%
   gt(groupname_col = "Panel") %>%
   tab_header(
-    title = md("**Table 6 — OLS Estimates of *More than 2 Children* Equations**")
+    title = md("**Table 6 : OLS Estimates of *More than 2 Children* Equations**")
   ) %>%
   tab_spanner(label = md("**All women**"), columns = c("(1)", "(2)", "(3)")) %>%
   tab_spanner(label = md("**Married women**"), columns = c("(4)", "(5)", "(6)")) %>%
   fmt_markdown(columns = everything()) %>%               # Parses HTML <br> and <sup>
   cols_align(align = "center", columns = -Variable) %>%  # Center numbers
   cols_align(align = "left", columns = Variable) %>%     # Left align labels
-  sub_missing(missing_text = "—") %>%                    # Replace NAs with em-dash
+  sub_missing(missing_text = ":") %>%                    # Replace NAs with em-dash
   opt_row_striping() %>%
   
   # Darken and thicken the borders above and below the panel headers
@@ -166,7 +166,7 @@ publication_table_6 <- df_combined %>%
 publication_table_6
 
 # To save as png
-# gtsave(publication_table_6, "Table_6.png")
+# gtsave(publication_table_6, "results/tables/table_06.png")
 
 # ==========================================
 # ENVIRONMENT CLEANUP

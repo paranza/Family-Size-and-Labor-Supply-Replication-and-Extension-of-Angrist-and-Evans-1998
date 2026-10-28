@@ -4,7 +4,7 @@
 
 # ==============================================================================
 # REPLICATION NOTE:
-# Please run the cleaning script ("Cleaning.R") prior to 
+# Please run the cleaning script ("scripts/prepare_data.R") prior to 
 # executing this file. This script relies on the cleaned data
 # being present in your global environment.
 # ==============================================================================
@@ -61,7 +61,7 @@ publication_table_iv_probit <- probit_summary_df %>%
   mutate(term = recode(term, !!!var_labels)) %>%
   gt() %>%
   tab_header(
-    title = md("**TABLE 1 — SECOND STAGE: IV-PROBIT RESULTS**")
+    title = md("**TABLE 1 : SECOND STAGE: IV-PROBIT RESULTS**")
   ) %>%
   fmt_number(
     columns = c(estimate, std.error, statistic, p.value),
@@ -134,8 +134,11 @@ cf_boot_function_ame <- function(data, indices) {
   return(c(ame_more_than_2, ame_v_hat))
 }
 
-# Set up parallel processing for Mac
-num_cores <- detectCores() - 1
+# Forked workers are unavailable on Windows. Use serial execution there.
+num_cores <- detectCores()
+if (is.na(num_cores)) num_cores <- 1L
+num_cores <- max(1L, num_cores - 1L)
+bootstrap_parallel <- if (.Platform$OS.type == "windows") "no" else "multicore"
 
 # Set the seed for reproducibility
 set.seed(30413) 
@@ -144,7 +147,7 @@ set.seed(30413)
 boot_results_ame <- boot(data = clean_data_80, 
                          statistic = cf_boot_function_ame, 
                          R = 500,
-                         parallel = "multicore",
+                         parallel = bootstrap_parallel,
                          ncpus = num_cores)
 
 # Display the results: t1* is the AME for more_than_2, t2* is the AME for v_hat
@@ -211,7 +214,7 @@ ame_table_all <- ame_df %>%
   mutate(factor = recode(factor, !!!var_labels)) %>%
   gt() %>%
   tab_header(
-    title = md("**TABLE 2 — AVERAGE MARGINAL EFFECTS: IV-PROBIT**")
+    title = md("**TABLE 2 : AVERAGE MARGINAL EFFECTS: IV-PROBIT**")
   ) %>%
   fmt_number(
     columns = c(AME, SE, z, p),
@@ -257,8 +260,8 @@ tab_style(
 ame_table_all
 
 # To save as png
-# gtsave(publication_table_iv_probit, "Table_IV_Probit.png")
-# gtsave(ame_table_all, "Table_AME_IV_Probit.png")
+# gtsave(publication_table_iv_probit, "results/tables/iv_probit_coefficients.png")
+# gtsave(ame_table_all, "results/tables/iv_probit_marginal_effects.png")
 
 # ==========================================
 # 4. ENVIRONMENT CLEANUP
