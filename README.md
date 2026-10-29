@@ -34,6 +34,7 @@ data/
 results/
   tables/                    # Existing table images
 docs/
+  family-size-labor-supply-report.pdf
   report.md
 archive/
   README.md
@@ -110,6 +111,6 @@ The repository does not yet pin package versions or provide an automated numeric
 
 ## Report and reference
 
-See [report information](docs/report.md) for the project write-up.
+Read the [project report (PDF)](docs/family-size-labor-supply-report.pdf). See [report information](docs/report.md) for its scope and notes on differences from the current implementation.
 
 Angrist, Joshua D., and William N. Evans. 1998. "Children and Their Parents' Labor Supply: Evidence from Exogenous Variation in Family Size." *American Economic Review*, 88(3): 450-477. [Published paper](https://www.jstor.org/stable/116844). [Replication data](https://doi.org/10.7910/DVN/4W9GW2).

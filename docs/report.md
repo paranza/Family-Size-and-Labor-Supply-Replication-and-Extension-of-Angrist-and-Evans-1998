@@ -1,5 +1,7 @@
 # Project report
 
-The project write-up is hosted in [Google Docs](https://docs.google.com/document/d/1jKWIKXY7aOhiRe1WyjraZPYy-xtNxdgoZ17-XgZ4X_U/view).
+Read the [project report (PDF)](family-size-labor-supply-report.pdf): *Children and Their Parents' Labor Supply: Evidence from Exogenous Variation in Family Size (Angrist and Evans, 1998), Paper Review & Analysis*.
 
-Access depends on the document owner's sharing settings. A standalone report is not currently included in this repository. The README describes the implementation present in the repository; it does not substitute for the full report.
+The 10-page report covers the research question, empirical results, replication, and extensions using IV-Probit and the Local Average Treatment Effect interpretation.
+
+The report is preserved as supplied. Its discussion of bootstrapped coefficient standard errors differs from the current main extension script, which bootstraps two average marginal effects. See the [README's results and limitations](../README.md#results-and-limitations) for details about the current implementation.
